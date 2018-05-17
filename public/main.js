@@ -218,9 +218,9 @@ function getTypingMessages(data) {
 function getUsernameColor(username) {
   // Compute hash code
   var hash = 7;
-  /* for (var i = 0; i < username.length; i++) {
+  for (var i = 0; i < username.length; i++) {
     hash = username.charCodeAt(i) + (hash << 5) - hash;
-  } */
+  }
   // Calculate color
   var index = Math.abs(hash % COLORS.length);
   return COLORS[index];
@@ -329,8 +329,15 @@ socket.on('send private message', function (data) {
 // Whenever the server emits 'user joined', log it in the chat body
 socket.on('user joined', function (data) {
   console.log(data);
-  //log(data.username + ' joined');
+  log(data.username + ' joined');
   addParticipantsMessage(data);
+});
+
+// Whenever the server emits 'user left', log it in the chat body
+socket.on('user left', function (data) {
+  log(data.username + ' left');
+  addParticipantsMessage(data);
+  removeChatTyping(data);
 });
 
 // Whenever the server emits 'typing', show the typing message

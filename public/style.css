@@ -95,7 +95,7 @@ ul {
 /* Font */
 
 .messages {
-  font-size: 150%;
+  font-size: 100%;
 }
 
 .inputMessage {
@@ -158,10 +158,13 @@ ul {
 .user{
   text-decoration-line: none;
   font-weight: 100;
-  font-size: 100%;
+  font-size: 80%;
   letter-spacing: 3px;
 }
 
 .userList{
   margin: 20px;
+}
+.message{
+  margin: 10px;
 }

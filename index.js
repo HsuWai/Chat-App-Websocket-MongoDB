@@ -32,14 +32,40 @@ mongo.connect('mongodb://127.0.0.1/mongochat', function (err, db) {
   io.on('connection', function (socket) {
     var addedUser = false;
 
+    // when the client emits 'new message', this listens and executes 
+    //Currently not used
+    socket.on('new message', function (data) {
+      db.collection('chats').insertOne({ username: socket.username, message: data }, function (err, docsInserted) {
+
+        if (err) throw err;
+        socket.broadcast.emit('new message', {
+          id: docsInserted.insertedId,
+          username: socket.username,
+          message: data
+        });
+
+      });
+
+      // we tell the client to execute 'new message'
+      /* socket.broadcast.emit('new message', {
+        username: socket.username,
+        message: data
+      }); */
+    });
+
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (username) {
       //if (addedUser) return;
 
+      console.log("In add user", (username in usocket));
       if (!(username in usocket)) {
         console.log(username, "New User");
         addedUser = true;
         user.push(username);
+        //socket.emit('login', { numUsers: user.length });
+        //console.log("After login ", user)
+        //socket.broadcast.emit('user joined', { username, numUsers: user.length });
+        //console.log(user);
       } else {
         console.log("old User", username, user);
 
@@ -47,22 +73,35 @@ mongo.connect('mongodb://127.0.0.1/mongochat', function (err, db) {
       socket.username = username;
       usocket[username] = socket;
       socket.emit('login', { numUsers: user.length });
-      socket.broadcast.emit('user joined', { username, numUsers: user.length });
+      //socket.broadcast.emit('user joined', { username, numUsers: user.length });
       db.collection('users').find({ username }).toArray(function (err, res) {
         if (err) throw err;
 
         socket.emit('inbox list', res)
       });
 
+      /* // we store the username in the socket session for this client
+      socket.username = username;
+      ++numUsers;
+      addedUser = true;
+      socket.emit('login', {
+        numUsers: numUsers
+      });
+      // echo globally (all clients) that a person has connected
+      socket.broadcast.emit('user joined', {
+        username: socket.username,
+        numUsers: numUsers
+      }); */
     });
 
     socket.on('send private message', function (res) {
       console.log("Send ", res.recipient in usocket);
+
       var _id = new ObjectID();
       res._id = _id;
 
       //For sender
-      usocket[socket.username].emit('receive private message', res)
+      usocket[socket.username].emit('receive private message', res);
       if (res.recipient in usocket) {
         //For receiver 
         usocket[res.recipient].emit('receive private message', res);
@@ -74,9 +113,18 @@ mongo.connect('mongodb://127.0.0.1/mongochat', function (err, db) {
           $push: { "messages": { _id, time: Date(), message: res.message, username: socket.username } }
         }
       ).then(function (result) {
-        console.log("message insert ", result)
+        //console.log("message insert ", result)
       })
-
+      /* db.collection('chats').insertOne({ username: socket.username, message: data }, function (err, docsInserted) {
+  
+        if (err) throw err;
+        socket.broadcast.emit('new message', {
+          id: docsInserted.insertedId,
+          username: socket.username,
+          message: data
+        });
+  
+      }); */
     });
 
     // when the client emits 'typing', we broadcast it to others
@@ -101,6 +149,20 @@ mongo.connect('mongodb://127.0.0.1/mongochat', function (err, db) {
       });
     });
 
+    // when the user disconnects.. perform this
+    socket.on('disconnect', function () {
+      if (addedUser) {
+        --numUsers;
+
+        console.log("Disconnet ", user)
+        // echo globally that this client has left
+        socket.broadcast.emit('user left', {
+          username: socket.username,
+          numUsers: user.length
+        });
+      }
+    });
+
     // start private chat
     socket.on('start private chat', function (data) {
       console.log("Starting Room ", data);
@@ -116,10 +178,13 @@ mongo.connect('mongodb://127.0.0.1/mongochat', function (err, db) {
         } else {
           const { messages } = res[0];
           //console.log("messages ", messages)
+          socket.broadcast.emit('user joined', { username: socket.username, numUsers: user.length });
           //start private chat
           socket.emit('show chat', { username: socket.username })
           // Emit the messages
           socket.emit('chat messages', messages);
+
+
         }
 
       });
