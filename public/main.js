@@ -240,7 +240,7 @@ function addUsers(data) {
 }
 
 function addInbox(data) {
-  var $usernameDiv = $('<a class="user" id="' + data.room_id + '" onclick=chatPrivate("' + data.room_id + '"); /> ')
+  var $usernameDiv = $('<a class="user" id="' + data._id + '" onclick=chatPrivate("' + data._id + '"); /> ')
     .text(data.room_name);
   var $userDiv = $('<li/>')
     .append($usernameDiv);
@@ -391,6 +391,7 @@ socket.on("inbox list", function (data) {
 
   if (data.length) {
     const { rooms } = data[0];
+	console.log("rooms",rooms);
     _.forEach(rooms, function (value) {
       addInbox(value)
     })
