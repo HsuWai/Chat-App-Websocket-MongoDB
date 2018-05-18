@@ -3,6 +3,11 @@
 
 A simple chat demo for socket.io
 
+## Prerequisities
+Install Node JS
+Install mongodb
+Start mongodb
+
 ## How to use
 
 ```
